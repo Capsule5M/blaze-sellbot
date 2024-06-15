@@ -338,8 +338,8 @@ client.on(Events.InteractionCreate, async interaction => {
         .setPlaceholder('Faites votre choix de Donation...')
         .addOptions(
           {
-            label: "Acheter des Diamants",
-            description: "Les Diamants sont la monnaie virtuelle de Modern.",
+            label: "Acheter des "+process.env.COIN_NAME+"",
+            description: "Les "+process.env.COIN_NAME+" sont la monnaie virtuelle de "+process.env.SERV_NAME+".",
             value: "1",
             emoji: "1209541241524584528"
             },
@@ -587,7 +587,7 @@ client.on(Events.InteractionCreate, async interaction => {
         case 'tebex':
           const embed = new EmbedBuilder()
           .setColor(process.env.COLOR_HASH)
-          .setDescription('Pour procéder au payment, [cliquez sur ce lien vers notre site Tebex]('+process.env.TEBEX_URL+'). \n \n Si vous avez vos messages privés ouverts sur le serveur de Modern, vous receverez une confirmation une fois le paiement effectué.');
+          .setDescription('Pour procéder au payment, [cliquez sur ce lien vers notre site Tebex]('+process.env.TEBEX_URL+'). \n \n Si vous avez vos messages privés ouverts sur le serveur de '+process.env.SERV_NAME+', vous receverez une confirmation une fois le paiement effectué.');
           await interaction.update({ content: "", embeds: [embed], components: [] });
         break;
         case 'manuel':

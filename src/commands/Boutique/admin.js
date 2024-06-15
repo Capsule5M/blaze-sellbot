@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 accountsSchema = require('../../Schemas.js/accounts');
+require('dotenv').config();
 
 module.exports = {
     data: new SlashCommandBuilder()

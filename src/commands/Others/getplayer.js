@@ -4,6 +4,7 @@ const axios = require('axios');
 const QueryDb = require("../../events/QueryDb");
 const { json } = require('express');
 const txAdmin = require("../../events/txAdmin")
+require('dotenv').config();
 
 String.prototype.format = function() {
     var args = Array.from(arguments);

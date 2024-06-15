@@ -1,20 +1,15 @@
 require('dotenv').config();
 const { Client, ModalBuilder, TextInputBuilder, TextInputStyle, Events, GatewayIntentBits, EmbedBuilder, PermissionsBitField, Permissions, MessageManager, Embed, Collection, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ActivityType, ChannelType, GuildFeature, CommandInteractionOptionResolver } = require(`discord.js`);
 const client = new Client({intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
-const validator = require('validator');
 const fs = require('fs');
 const url = require('url');
 client.commands = new Collection();
 client.buttons = new Collection();
 const express = require("express");
 const app = express()
-const orderSchema = require('./Schemas.js/orders');
-const pnlSchema =  require("./Schemas.js/pnl");
 const accountsSchema =  require("./Schemas.js/accounts");
-const creatorSchema =  require("./Schemas.js/creator");
 const stickySchema = require("./Schemas.js/sticky");
 const { default: axios } = require('axios');
-const { send } = require('process');
 const QueryDb = require("./events/QueryDb")
 
 const jsonData = {};
@@ -53,11 +48,11 @@ process.on('uncaughtExceptionMonitor', (err, origin) => {
 // ############################################################################################################ Diamands Map ############################################################################################################
 
 const storeItems = new Map([
-  [1, { price: 10, priceInCents: 1000, name: "1000 Diamands", iscoin: true}],
-  [2, { price: 25, priceInCents: 2500, name: "2500 Diamands", iscoin: true}],
-  [3, { price: 50, priceInCents: 5000, name: "5000 Diamands", iscoin: true}],
-  [4, { price: 100, priceInCents: 12000, name: "12000 Diamands", iscoin: true}],
-  [5, { price: 200, priceInCents: 25000, name: "25000 Diamands", iscoin: true}],
+  [1, { price: 10, priceInCents: 1000, name: "1000 "+process.env.COIN_NAME+"", iscoin: true}],
+  [2, { price: 25, priceInCents: 2500, name: "2500 "+process.env.COIN_NAME+"", iscoin: true}],
+  [3, { price: 50, priceInCents: 5000, name: "5000 "+process.env.COIN_NAME+"", iscoin: true}],
+  [4, { price: 100, priceInCents: 12000, name: "12000 "+process.env.COIN_NAME+"", iscoin: true}],
+  [5, { price: 200, priceInCents: 25000, name: "25000 "+process.env.COIN_NAME+"", iscoin: true}],
   [6, { price: 25, priceInCents: 2500, name: "VIP Bronze", iscoin: false}],
   [7, { price: 50, priceInCents: 5000, name: "VIP Argent", iscoin: false}],
   [8, { price: 100, priceInCents: 10000, name: "VIP Or", iscoin: false}],
@@ -65,11 +60,11 @@ const storeItems = new Map([
 ])
 
 async function logAction(description) {
-  const channel = client.channels.cache.get("1083809217498075176");
+  const channel = client.channels.cache.get(process.env.LOGSID);
   const embed = new EmbedBuilder()
     .setTitle("ShopBot - Log d'actions")
     .setDescription(description)
-    .setColor(0x8200e9)
+    .setColor(process.env.COLOR_HASH)
     .setFooter({ text: process.env.FOOTER_TEXT, iconURL: process.env.FOOTER_URL})
     .setTimestamp();
   await channel.send({ embeds: [embed] });
@@ -141,7 +136,7 @@ client.on(Events.MessageCreate, async message => {
       const embed = new EmbedBuilder()
       .setTitle('Message Sticky 📌')
       .setDescription(data.Message)
-      .setColor(0x8200e9)
+      .setColor(process.env.COLOR_HASH)
       .setFooter({ text: process.env.FOOTER_TEXT, iconURL: process.env.FOOTER_URL})
       .setTimestamp();
 
@@ -193,7 +188,7 @@ client.on(Events.InteractionCreate, async interaction => {
 		);
 
       const embed = new EmbedBuilder()
-			.setColor(0x8200e9)
+			.setColor(process.env.COLOR_HASH)
 			.setTitle('Nouvelle Transaction Manuelle.')
 			.setDescription(' \nInformations sur la commande: \n\n ``'+manualOrderData[interaction.user.id]+'`` \n\n Discord User Tag: <@'+interaction.user.id+'> \n\n Code PCS/PaysafeCard: `'+code+'` \n\n Montant en €: `'+amount+'` \n\n Vrais Montant en €: `'+parsedData.coins/100+'` ');
 
@@ -210,7 +205,7 @@ client.on(Events.InteractionCreate, async interaction => {
       const embed = new EmbedBuilder()
         .setTitle('Changement de mail')
         .setDescription('Le mail de <@'+userId+'> a été mis à jour. Nouveau mail : `'+mail+'`.')
-        .setColor(0x8200e9);
+        .setColor(process.env.COLOR_HASH);
       await interaction.update({ embeds: [embed], components:[], ephemeral: true });
       await logAction('Admin: <@'+interaction.user.id+'>\n User: <@'+userId+'>\n Mail: ``'+mail+'``\n Type: ``Change Mail``')
     } else {
@@ -365,9 +360,8 @@ client.on(Events.InteractionCreate, async interaction => {
     await interaction.update({components: []});
     await GenerateCoins(orderData.coins, orderData.id);
     await sendMessageToUser2(userID, orderData.coins, orderData.orderID);
-    await pnlSchema.findOneAndUpdate({guid: process.env.GUILDID}, { $inc: { total: parseInt(orderData.coins) } });
     const guild = await client.guilds.fetch(process.env.GUILDID);
-    const role = guild.roles.cache.get("1058490272150978642");
+    const role = guild.roles.cache.get(process.env.CONTRIB_ROLE);
     const user = await guild.members.fetch(orderData.id);
     if (!user.roles.cache.has(role.id)) {
       await user.roles.add(role);
@@ -388,7 +382,7 @@ client.on(Events.InteractionCreate, async interaction => {
     const creatorStatus = (userData.creator && userData.creator !== 'null') ? userData.creator : 'Pas de code créateur lié.';
     const emailStatus = (userData.email && userData.email !== 'null') ? userData.email : 'Pas de mail lié.';
     const embed = new EmbedBuilder()
-    .setColor(0x8200e9)
+    .setColor(process.env.COLOR_HASH)
     .setTitle(`Compte de donation **[${interaction.user.username}]**`)
     .setDescription('**Numero de compte :** `'+interaction.user.id+'`\n**Email :** ||`'+emailStatus+'`||\n**VIP :** '+vipStatus+'\n**Createur : **`'+creatorStatus+'`\n**Vos Diamands '+process.env.COIN_NAME+' :** `'+tokens+'`')
     .setFooter({ text: process.env.FOOTER_TEXT, iconURL: process.env.FOOTER_URL})
@@ -436,28 +430,7 @@ client.on(Events.InteractionCreate, async interaction => {
           .setEmoji('1005550287764856922')
           .setDisabled(true),
       );
-      const row2 = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId('startbj')
-          .setLabel('Blackjack')
-          .setStyle(ButtonStyle.Secondary)
-          .setEmoji('🃏')
-          .setDisabled(true),
-        new ButtonBuilder()
-          .setCustomId('startrt')
-          .setLabel('Roulette')
-          .setStyle(ButtonStyle.Secondary)
-          .setEmoji('🖲️')
-          .setDisabled(true),
-          new ButtonBuilder()
-          .setCustomId('startcp')
-          .setLabel('Craps')
-          .setStyle(ButtonStyle.Secondary)
-          .setEmoji('🎲')
-          .setDisabled(true),
-      );
-      await interaction.reply({ content:'**VOTRE COMPTE EST BLOQUER POUR FRAUDE/ABUS, MERCI DE FAIRE UN TICKET POUR LE REACTIVER !**',components:[row1,row2], embeds:[embed], ephemeral: true });
+      await interaction.reply({ content:'**VOTRE COMPTE EST BLOQUER POUR FRAUDE/ABUS, MERCI DE FAIRE UN TICKET POUR LE REACTIVER !**',components:[row1], embeds:[embed], ephemeral: true });
     } else {
       const row1 = new ActionRowBuilder()
       .addComponents(
@@ -477,28 +450,7 @@ client.on(Events.InteractionCreate, async interaction => {
           .setStyle(ButtonStyle.Secondary)
           .setEmoji('1005550287764856922'),
       );
-      const row2 = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId('startbj')
-          .setLabel('Blackjack')
-          .setStyle(ButtonStyle.Secondary)
-          .setEmoji('🃏')
-          .setDisabled(true),
-        new ButtonBuilder()
-          .setCustomId('startrt')
-          .setLabel('Roulette')
-          .setStyle(ButtonStyle.Secondary)
-          .setEmoji('🖲️')
-          .setDisabled(true),
-          new ButtonBuilder()
-          .setCustomId('startcp')
-          .setLabel('Craps')
-          .setStyle(ButtonStyle.Secondary)
-          .setEmoji('🎲')
-          .setDisabled(true),
-      );
-      await interaction.reply({ components:[row1,row2], embeds:[embed], ephemeral: true });
+      await interaction.reply({ components:[row1], embeds:[embed], ephemeral: true });
     }
   } else if (interaction.customId.startsWith('cgmail')) {
     const userId = interaction.customId.substring(6);
@@ -512,20 +464,6 @@ client.on(Events.InteractionCreate, async interaction => {
     .setLabel("Saisir le nouveau mail")
     .setStyle(TextInputStyle.Short);
     const secoundActionRow2 = new ActionRowBuilder().addComponents(mail);
-    modal.addComponents(secoundActionRow2);
-    await interaction.showModal(modal);
-  } else if (interaction.customId.startsWith('cgcreator')) {
-    const userId = interaction.customId.substring(9);
-    const modal = new ModalBuilder()
-    .setTitle("Entrer le code créateur.")
-    .setCustomId("adminCreatorInputModal"+userId);
-    const code = new TextInputBuilder()
-    .setCustomId("adminCreatorCode")
-    .setRequired(true)
-    .setPlaceholder('Attribuer un code créateur à un compte.')
-    .setLabel("Saisir le code créateur")
-    .setStyle(TextInputStyle.Short);
-    const secoundActionRow2 = new ActionRowBuilder().addComponents(code);
     modal.addComponents(secoundActionRow2);
     await interaction.showModal(modal);
   } else if (interaction.customId.startsWith('cgvip')) {
@@ -558,66 +496,6 @@ client.on(Events.InteractionCreate, async interaction => {
 						}
           ));
     await interaction.update({ content: 'Interactions sur VIP :', components: [adminvip], embeds:[], ephemeral: true });
-  } else if (interaction.customId.startsWith('setcreator')) {
-    const userData = await accountsSchema.findOne({ discordID: interaction.user.id });
-    if (userData.creator == 'null') {
-      const modal = new ModalBuilder()
-      .setTitle("Entrer le code créateur.")
-      .setCustomId("creatorInputModal");
-      const code = new TextInputBuilder()
-      .setCustomId("creatorCode")
-      .setRequired(true)
-      .setPlaceholder('Attribuer un code créateur à votre compte.')
-      .setLabel("Saisir le code créateur")
-      .setStyle(TextInputStyle.Short);
-      const secoundActionRow2 = new ActionRowBuilder().addComponents(code);
-      modal.addComponents(secoundActionRow2);
-      await interaction.showModal(modal);
-    } else {
-      const embed = new EmbedBuilder()
-      .setColor("Red")
-      .setDescription(`Vous avez deja un code créateur lié à votre compte. Votre code créateur actuel est : \`${userData.creator}\` \n\n Si vous souhaitez le changer, veuillez ouvrir un ticket.`);
-      await interaction.reply({embeds: [embed], ephemeral: true });
-    }
-  } else if (interaction.customId.startsWith('startbj')) {
-    const miseModal = new ModalBuilder()
-    .setTitle("Entrer la mise.")
-    .setCustomId("miseInputModalBJ");
-    const miseInput = new TextInputBuilder()
-    .setCustomId("miseAmountBJ")
-    .setRequired(true)
-    .setLabel("Entrer la mise")
-    .setPlaceholder("Mise pour la partie de Blackjack")
-    .setStyle(TextInputStyle.Short);
-    const secoundActionRow2 = new ActionRowBuilder().addComponents(miseInput);
-    miseModal.addComponents(secoundActionRow2);
-    await interaction.showModal(miseModal);
-  } else if (interaction.customId.startsWith('startrt')) {
-    const miseModal = new ModalBuilder()
-    .setTitle("Entrer la mise.")
-    .setCustomId("miseInputModalRT");
-    const miseInput = new TextInputBuilder()
-    .setCustomId("miseAmountRT")
-    .setRequired(true)
-    .setLabel("Entrer la mise")
-    .setPlaceholder("Mise pour la partie de Roulette")
-    .setStyle(TextInputStyle.Short);
-    const secoundActionRow2 = new ActionRowBuilder().addComponents(miseInput);
-    miseModal.addComponents(secoundActionRow2);
-    await interaction.showModal(miseModal);
-  } else if (interaction.customId.startsWith('startcp')) {
-    const miseModal = new ModalBuilder()
-    .setTitle("Entrer la mise.")
-    .setCustomId("miseInputModalCP");
-    const miseInput = new TextInputBuilder()
-    .setCustomId("miseAmountCP")
-    .setRequired(true)
-    .setLabel("Entrer la mise")
-    .setPlaceholder("Mise pour la partie de Craps")
-    .setStyle(TextInputStyle.Short);
-    const secoundActionRow2 = new ActionRowBuilder().addComponents(miseInput);
-    miseModal.addComponents(secoundActionRow2);
-    await interaction.showModal(miseModal);
   } else if (interaction.customId.startsWith('sendtokens')) {
     const tokenModal = new ModalBuilder()
     .setTitle("Entrer les informations pour l'envoi.")
@@ -708,50 +586,10 @@ client.on(Events.InteractionCreate, async interaction => {
       switch (Gateway) {
         case 'tebex':
           const embed = new EmbedBuilder()
-          .setColor(0x8200e9)
-          .setDescription(`Pour procéder au payment, [cliquez sur ce lien vers notre site Tebex](https://store.modern5m.com). \n \n Si vous avez vos messages privés ouverts sur le serveur de Modern, vous receverez une confirmation une fois le paiement effectué.`);
+          .setColor(process.env.COLOR_HASH)
+          .setDescription('Pour procéder au payment, [cliquez sur ce lien vers notre site Tebex]('+process.env.TEBEX_URL+'). \n \n Si vous avez vos messages privés ouverts sur le serveur de Modern, vous receverez une confirmation une fois le paiement effectué.');
           await interaction.update({ content: "", embeds: [embed], components: [] });
         break;
-        case 'sellix':
-          const orderData = JSON.parse(jsonData[interaction.user.id]);
-          if (orderData.coins !== 0) {
-            const accountData = await accountsSchema.findOne({ discordID: interaction.user.id });
-            if (accountData.active === false) {
-              const embed = new EmbedBuilder()
-                .setDescription('Votre compte de jeu est actuellement désactivé. Vous ne pouvez pas faire de donation tant que votre compte est désactivé. Veuillez ouvrir un ticket pour plus d\'informations.')
-                .setColor("Red");
-              await interaction.reply({ embeds: [embed], ephemeral: true});
-              return;
-            }
-            responsefromapi = await RequestPaymentUrl("sellix", jsonData[interaction.user.id], interaction.user.id, accountData.email, accountData.coupon, accountData.creator);
-            const embed2 = new EmbedBuilder()
-              .setColor(0x8200e9)
-              .setDescription(`Pour procéder au payment, [cliquez sur ce lien](${responsefromapi.url}). \n \n Si vous avez vos messages privés ouverts sur le serveur de Modern, vous receverez une confirmation une fois le paiement effectué.`);
-            await interaction.update({ content: "", embeds: [embed2], components: [] });
-            break;
-          } else {
-            const accountData = await accountsSchema.findOne({ discordID: interaction.user.id });
-            if (accountData.active === false) {
-              const embed = new EmbedBuilder()
-                .setDescription('Votre compte de jeu est actuellement désactivé. Vous ne pouvez pas faire de donation tant que votre compte est désactivé. Veuillez ouvrir un ticket pour plus d\'informations.')
-                .setColor("Red");
-              await interaction.reply({ embeds: [embed], ephemeral: true});
-              return;
-            }
-            const modal = new ModalBuilder()
-            .setTitle("Entrer le montant de la donation.")
-            .setCustomId("gatewaymenu");
-            const amount = new TextInputBuilder()
-            .setCustomId("amount")
-            .setRequired(true)
-            .setPlaceholder('Montant en EURO sans virgule, chiffres entiers.')
-            .setLabel("Montant de la donation en €.")
-            .setStyle(TextInputStyle.Short);
-            const firstActionRow = new ActionRowBuilder().addComponents(amount);
-            modal.addComponents(firstActionRow);
-            await interaction.showModal(modal);
-            break;
-          }
         case 'manuel':
           const accountData1 = await accountsSchema.findOne({ discordID: interaction.user.id });
           if (accountData1.active === false) {
@@ -834,7 +672,7 @@ client.on(Events.InteractionCreate, async interaction => {
             .addOptions(
               {
                 label: "Plateforme de Donation",
-                description: "Pour les paiments via Paypal, Carte Bancaire & Cryptomonnaie.",
+                description: "Pour les paiments via Paypal & Carte Bancaire, via Tebex.",
                 value: "tebex",
               }));
           await interaction.update({ content: `Vous vous apprêtez à prendre un abonnement VIP de ${totalamount}€.\nChoisissez votre moyen de paiement :`, components: [gatewaymenu] });
@@ -849,7 +687,7 @@ client.on(Events.InteractionCreate, async interaction => {
             .addOptions(
               {
                 label: "Plateforme de Donation",
-                description: "Pour les paiments via Paypal & Carte Bancaire.",
+                description: "Pour les paiments via Paypal & Carte Bancaire, via Tebex.",
                 value: "tebex",
               },
               {
@@ -909,7 +747,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
             ),
         );
-        await interaction.update({ content: "En **choisissant de continuer** vous **accepter** nôtre [politique de donation.](https://cdn.blaze5m.com/blaze_tos2.pdf) \nChoisissez la quantité de "+process.env.COIN_NAME+" :", components: [menu], ephemeral: true });
+        await interaction.update({ content: "En **choisissant de continuer** vous **accepter** nôtre [politique de donation.]("+process.env.TOS_URL+") \nChoisissez la quantité de "+process.env.COIN_NAME+" :", components: [menu], ephemeral: true });
       } else {
         const menu = new ActionRowBuilder()
         .addComponents(
@@ -945,7 +783,7 @@ client.on(Events.InteractionCreate, async interaction => {
               },
             ),
         );
-        await interaction.update({ content: "En **choisissant de continuer** vous **accepter** nôtre [politique de donation.](https://cdn.blaze5m.com/blaze_tos2.pdf) \nChoisissez votre abonnement VIP :", components: [menu], ephemeral: true });
+        await interaction.update({ content: "En **choisissant de continuer** vous **accepter** nôtre [politique de donation.]("+process.env.TOS_URL+") \nChoisissez votre abonnement VIP :", components: [menu], ephemeral: true });
       }
     } else if (interaction.customId.startsWith('viptype')) {
       const userId = interaction.customId.substring(7);
@@ -956,12 +794,12 @@ client.on(Events.InteractionCreate, async interaction => {
       await accountsSchema.findOneAndUpdate({ discordID: userId }, { $set: { vip: JSON.stringify({ type: vipType, expiration: expirationDate.toISOString().slice(0, 10) }) } });
       const vipLevels = { "VIP Bronze": 1, "VIP Argent": 2, "VIP Or": 3, "VIP Platinium": 4 };
       const vip_level = vipLevels[vipType] || null;
-      const roleIds = { 1: "1219456770733244526", 2: "1219321282391314472", 3: "1058490268338360320", 4: "1211687706753769512" };
+      const roleIds = { 1: "1219456770733244526", 2: "1219321282391314472", 3: "1058490268338360320", 4: "1211687706753769512" }; //@TODO: Change the role IDs to environment variables
       const roleId = roleIds[vip_level];
       QueryDb(`INSERT INTO users_vip (discordId, vip_level, expiration) VALUES ('${userId}', '${vip_level}', '${expirationDate.toISOString().slice(0, 10)}')`, async function(result) {
         if (result.affectedRows > 0) {
           const role = guild.roles.cache.get(roleId);
-          const role1 = guild.roles.cache.get("1058490272150978642");
+          const role1 = guild.roles.cache.get(process.env.CONTRIB_ROLE);
           const user = await guild.members.fetch(userId);
           if (!user.roles.cache.has(role.id)) {
             await user.roles.add(role);
@@ -972,7 +810,7 @@ client.on(Events.InteractionCreate, async interaction => {
             console.log(`Added role '${role1.name}' to ${userId}.`);
           }
           const embed = new EmbedBuilder()
-          .setColor(0x8200e9)
+          .setColor(process.env.COLOR_HASH)
           .setDescription(`Le VIP de <@${userId}> a été ajouté avec succès.`);
           await interaction.update({ content: '', components: [], embeds:[embed], ephemeral:true });
           await logAction('Admin: <@'+interaction.user.id+'>\n User: <@'+userId+'>\nVIP Type: ``'+vipType+'``\nExpiration: ``'+expirationDate.toISOString().slice(0, 10)+'``\nType: ``Add VIP``')
@@ -1029,7 +867,7 @@ client.on(Events.InteractionCreate, async interaction => {
           const vipData = JSON.parse(userData.vip);
           const vipStatus = userData.vip === "null" ? '``Pas de VIP.``' : '``'+vipData.type+' - ``<t:'+Math.floor(new Date(vipData.expiration).getTime() / 1000)+':R>';
           const embed = new EmbedBuilder()
-          .setColor(0x8200e9)
+          .setColor(process.env.COLOR_HASH)
           .setDescription(`Le statut VIP de <@${userId}> est actuellement : ${vipStatus}`);
           await interaction.update({ content: '', components: [], embeds:[embed], ephemeral:true }); 
         case 'rem':
@@ -1041,7 +879,7 @@ client.on(Events.InteractionCreate, async interaction => {
               if (result.affectedRows > 0) {
                 const vipLevels1 = { "VIP Bronze": 1, "VIP Argent": 2, "VIP Or": 3, "VIP Platinium": 4 };
                 const vip_level1 = vipLevels1[vipData1.type] || null;
-                const roleIds1 = { 1: "1219456770733244526", 2: "1219321282391314472", 3: "1058490268338360320", 4: "1211687706753769512" };
+                const roleIds1 = { 1: "1219456770733244526", 2: "1219321282391314472", 3: "1058490268338360320", 4: "1211687706753769512" };  // @TODO: Change the role IDs to environment variables
                 const roleId1 = roleIds1[vip_level1];
                 const role2 = guild.roles.cache.get(roleId1);
                 const user = await guild.members.fetch(userDatarem.discordID);
@@ -1052,14 +890,14 @@ client.on(Events.InteractionCreate, async interaction => {
                 userDatarem.vip = "null";
                 await userDatarem.save();
                 const embed1 = new EmbedBuilder()
-                .setColor(0x8200e9)
+                .setColor(process.env.COLOR_HASH)
                 .setDescription(`Le VIP de <@${userId}> a été supprimé avec succès.`);
                 await interaction.update({ content: '', components: [], embeds:[embed1], ephemeral:true });
                 await logAction('Admin: <@'+interaction.user.id+'>\n User: <@'+userId+'>\nType: ``Remove VIP``')
               } else {
                 const vipLevels1 = { "VIP Bronze": 1, "VIP Argent": 2, "VIP Or": 3, "VIP Platinium": 4 };
                 const vip_level1 = vipLevels1[vipData1.type] || null;
-                const roleIds1 = { 1: "1219456770733244526", 2: "1219321282391314472", 3: "1058490268338360320", 4: "1211687706753769512" };
+                const roleIds1 = { 1: "1219456770733244526", 2: "1219321282391314472", 3: "1058490268338360320", 4: "1211687706753769512" }; //@TODO Change the role IDs to environment variables
                 const roleId1 = roleIds1[vip_level1];
                 const role2 = guild.roles.cache.get(roleId1);
                 const user = await guild.members.fetch(userDatarem.discordID);
@@ -1070,7 +908,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 userDatarem.vip = "null";
                 await userDatarem.save();
                 const embed1 = new EmbedBuilder()
-                .setColor(0x8200e9)
+                .setColor(process.env.COLOR_HASH)
                 .setDescription(`Une erreur est survenue lors de la suppression du VIP de <@${userId}>. Veuillez ouvrir un ticket pour plus d'informations.`);
                 await interaction.update({ content: '', components: [], embeds:[embed1], ephemeral:true });
                 await logAction('Admin: <@'+interaction.user.id+'>\n User: <@'+userId+'>\nType: ``Remove VIP``')
@@ -1078,7 +916,7 @@ client.on(Events.InteractionCreate, async interaction => {
             });
           } else {
             const embed = new EmbedBuilder()
-            .setColor(0x8200e9)
+            .setColor(process.env.COLOR_HASH)
             .setDescription(`L'utilisateur <@${userId}> n'a pas de VIP.`);
             await interaction.update({ content: '', components: [], embeds:[embed], ephemeral:true });
           }
@@ -1117,12 +955,12 @@ async function GenerateCoins(totalCoins, DiscordID) {
 }
 
 async function sendMessageToUser(userId, orderID) {
-  const message = 'Votre commande (ID de commande : `'+orderID+'`) a été contestée par votre banque. En raison du non-respect de nos politiques de donations [ici](https://cdn.blaze5m.com/blaze_tos2.pdf), votre compte donateur a été suspendu et vous avez été automatiquement banni du serveur en jeu. Pour plus d\'informations, veuillez ouvrir un ticket dans <#1058490451520393366>. Nous vous remercions de votre compréhension.';
+  const message = 'Votre commande (ID de commande : `'+orderID+'`) a été contestée par votre banque. En raison du non-respect de nos politiques de donations [ici]('+process.env.TOS_URL+'), votre compte donateur a été suspendu et vous avez été automatiquement banni du serveur en jeu. Pour plus d\'informations, veuillez ouvrir un ticket au support. Nous vous remercions de votre compréhension.';
   await client.users.send(userId, message);
 }
 
 async function sendMessageToUser2(userId, coins, orderID) {
-  const message = 'Votre commande (ID de commande : `'+orderID+'` ) a été traitée et vous avez reçu `'+coins+'` '+process.env.COIN_NAME+'. \nVous pouvez maintenant voir vos '+process.env.COIN_NAME+' en appuyant sur le bouton Modern\'Store dans le canal <#1089653501396779128> !\nMerci pour votre soutien, l\'équipe Modern :love_you_gesture:';
+  const message = 'Votre commande (ID de commande : `'+orderID+'` ) a été traitée et vous avez reçu `'+coins+'` '+process.env.COIN_NAME+'. \nVous pouvez maintenant voir vos '+process.env.COIN_NAME+' en appuyant sur le bouton **Shop** dans le canal <#'+process.env.BOT_HELP_CHANNEL+'> !\nMerci pour votre soutien, l\'équipe '+process.env.SERV_NAME+' :love_you_gesture:';
   await client.users.send(userId, message);
 }
 
@@ -1133,201 +971,19 @@ async function sendMessageToUser3(userId, orderID) {
 }
 
 async function sendMessageToUser4(userId, orderId, vip, expiration) {
-  const message = 'Votre commande (ID de commande : `'+orderId+'`) a été traitée et vous avez reçu le statut VIP : `'+vip+'`. Votre statut VIP expirera le  `'+expiration+'`. \nVous pouvez maintenant profiter de vos avantages VIP sur notre serveur. \nMerci pour votre soutien, l\'équipe Modern :love_you_gesture:';
+  const message = 'Votre commande (ID de commande : `'+orderId+'`) a été traitée et vous avez reçu le statut VIP : `'+vip+'`. Votre statut VIP expirera le  `'+expiration+'`. \nVous pouvez maintenant profiter de vos avantages VIP sur notre serveur. \nMerci pour votre soutien, l\'équipe '+process.env.SERV_NAME+' :love_you_gesture:';
   await client.users.send(userId, message);
 }
 
 function generateOrderID() {
-  const prefix = "Modern-";
+  const prefix = ''+process.env.SERV_NAME+'-';
   const suffix = "-b9d6";
   const randomPart = Math.random().toString(36).substr(2, 10);
   const timestamp = new Date().getTime().toString().substr(-4);
   return prefix + randomPart + timestamp + suffix;
 }
 
-async function RequestPaymentUrl(api, cartinfo, discordID, email, coupon, creator) {
-  let response;
-  const parsedData = JSON.parse(cartinfo);
-  const orderID = generateOrderID();
-  if (api === 'sellix') {
-    const validCoupons = ["BAHAHAHDjjdfejfdfef"];
-    // Check if the coupon is valid
-    if (!validCoupons.includes(coupon)) {
-      coupon = null;
-    }
-    if (parsedData.donation === true) {
-      const paymentPayload = {
-        title: "Modern Roleplay - Donation",
-        value: parsedData.coins,
-        currency: "EUR",
-        quantity: 1,
-        email: email,
-        coupon_code: coupon || null,
-        affiliate_revenue_customer_id: creator || null,
-        white_label: false,
-        return_url: "https://modern5m.com"
-      };
-      response = await sellix.payments.create(paymentPayload);
-      if (response.url) {
-        const pendingOrder = new orderSchema({
-          discordID: discordID,
-          orderID: orderID,
-          sellixID: response.uniqid,
-          amount: 0,
-          email: email,
-          paid: false
-        });
-        await pendingOrder.save();
-        return response;
-      }
-    } else {
-      const sellix_id = parsedData.items.map(item => {
-        const storeItem = storeItems.get(item.id);
-        return storeItem.sellix;
-      });
-      const iscoin = parsedData.items.map(item => {
-        const storeItem = storeItems.get(item.id);
-        return storeItem.iscoin;
-      });
-      const paymentPayload = {
-        product_id: sellix_id[0],
-        quantity: 1,
-        email: email,
-        coupon_code: coupon || null,
-        affiliate_revenue_customer_id: creator || null,
-        white_label: false,
-        return_url: "https://modern5m.com"
-      };
-      response = await sellix.payments.create(paymentPayload);
-      if (response.url) {
-        let pendingOrder;
-        if (iscoin[0] === false) {
-          pendingOrder = new orderSchema({
-            discordID: discordID,
-            orderID: sellix_id[0],
-            sellixID: response.uniqid,
-            amount: 0,
-            email: email,
-            paid: false
-          }); 
-        } else {
-          pendingOrder = new orderSchema({
-            discordID: discordID,
-            orderID: orderID,
-            sellixID: response.uniqid,
-            amount: parsedData.coins,
-            email: email,
-            paid: false
-          });
-        }
-        await pendingOrder.save();
-        return response;
-      }
-    }
-  } else {
-    throw new Error(`Unsupported API: ${api}`);
-  }
-}
-// ############################################################################################################ Express Webhook Sellix/Discord API ############################################################################################################ 
-
-app.post("/c1dflLo99SlYDjb1zpL570T8WwCeBL", express.raw({type: "application/json"}), async (request, response) => {
-  const newpayload = JSON.parse(request.body);
-  const guild = await client.guilds.fetch(process.env.GUILDID);
-  switch (newpayload.event) {
-  case "order:disputed":
-    let PaymentID1 = newpayload.data.uniqid;
-    const orderdis = await orderSchema.findOne({sellixID: PaymentID1});
-    if (orderdis !== null && orderdis.paid === true) {
-      await accountsSchema.findOneAndUpdate({ discordID: orderdis.discordID }, { $set: { active: false } });
-      orderdis.paid = false;
-      await orderdis.save();
-      await logAction('User: <@'+orderdis.discordID+'>\n User ID: ``'+orderdis.discordID+'``\n Payment ID: ``'+PaymentID1+'``\n Type: ``Order Disputed``')
-      sendMessageToUser(orderdis.discordID, PaymentID1);
-    }
-    response.json({received: true});
-    break;
-  case "product:dynamic":
-    if (newpayload.data.type === "PRODUCT_SUBSCRIPTION") {
-      let PaymentID;
-      const check = await orderSchema.findOne({sellixID: newpayload.data.uniqid});
-      if (check !== null) {
-        PaymentID = newpayload.data.uniqid;
-      } else {
-        PaymentID = newpayload.data.recurring_billing_id;
-      }
-      const order = await orderSchema.findOne({sellixID: PaymentID});
-      if (order !== null) {
-        const storeItem = Array.from(storeItems.values()).find(item => item.sellix === order.orderID);
-        const vipType = storeItem ? storeItem.name : null;
-        const expirationDate = new Date();
-        expirationDate.setMonth(expirationDate.getMonth() + 1);
-        if (order.paid === false) {
-          order.paid = true;
-          order.PaymentID = newpayload.data.recurring_billing_id;
-          await order.save();
-        }
-        const vipLevels = { "VIP Bronze": 1, "VIP Argent": 2, "VIP Or": 3, "VIP Platinium": 4 };
-        const vip_level = vipLevels[vipType] || null;
-        const roleIds = { 1: "1219456770733244526", 2: "1219321282391314472", 3: "1058490268338360320", 4: "1211687706753769512" };
-        const roleId = roleIds[vip_level];
-        QueryDb(`INSERT INTO users_vip (discordId, vip_level, expiration) VALUES ('${order.discordID}', '${vip_level}', '${expirationDate.toISOString().slice(0, 10)}') ON DUPLICATE KEY UPDATE vip_level = VALUES(vip_level), expiration = VALUES(expiration)`, async function(result) {
-          if (result.affectedRows > 0) {
-            await accountsSchema.findOneAndUpdate({ discordID: order.discordID }, { $set: { vip: JSON.stringify({ type: vipType, expiration: expirationDate.toISOString().slice(0, 10) }) } });
-            const role = guild.roles.cache.get(roleId);
-            const role1 = guild.roles.cache.get("1058490272150978642");
-            const user = await guild.members.fetch(order.discordID);
-            if (!user.roles.cache.has(role.id)) {
-              await user.roles.add(role);
-              console.log(`Added role '${role.name}' to ${order.discordID}.`);
-            }
-            if (!user.roles.cache.has(role1.id)) {
-              await user.roles.add(role1);
-              console.log(`Added role '${role1.name}' to ${order.discordID}.`);
-            }
-            await logAction('User: <@'+order.discordID+'>\n User ID: ``'+order.discordID+'``\n Payment ID: ``'+PaymentID+'``\n VIP Type: ``'+vipType+'``\n Expiration: ``'+expirationDate.toISOString().slice(0, 10)+'``\n Type: ``'+newpayload.data.type+'``')
-            response.json({received: true, account: order.discordID, orderId: PaymentID, comment: "VIP subscription added to user account until ."});
-          } else {
-            response.json({received: true, error: "Error getting order from DB, please open a support ticket at discord.gg/modern."});
-          }
-        });
-        const discordId = order.discordID.toString();
-        const orderId = PaymentID.toString();
-        const sendDate = expirationDate.toISOString().slice(0, 10)
-        sendMessageToUser4(discordId, orderId, vipType, sendDate);
-        break;
-      } else {
-        response.json({received: true, error: "Error getting order from DB, please open a support ticket at discord.gg/modern."});
-        break;
-      }
-    } else if (newpayload.data.type === "PUBLIC_REST_API") {
-      const PaymentID = newpayload.data.uniqid;
-      const order = await orderSchema.findOne({sellixID: PaymentID});
-      if (order !== null && order.paid === false) {
-        await orderSchema.findOneAndUpdate({sellixID: PaymentID}, {paid: true});
-        const role = guild.roles.cache.get("1058490272150978642");
-        const user = await guild.members.fetch(order.discordID);
-        if (!user.roles.cache.has(role.id)) {
-          await user.roles.add(role);
-          console.log(`Added role '${role.name}' to ${order.discordID}.`);
-        }
-        await GenerateCoins(order.amount, order.discordID);
-        sendMessageToUser2(order.discordID, order.amount, PaymentID);
-        await logAction('User: <@'+order.discordID+'>\n User ID: ``'+order.discordID+'``\n Payment ID: ``'+PaymentID+'``\n Amount €: ``'+order.amount/100+'``\n Diamands: ``'+order.amount+'``\n Type: ``'+newpayload.data.type+'``',)
-        response.json({received: true, account: order.discordID, amount: order.amount , orderId: PaymentID, comment: "Diamands & discord role added to user account."});
-        break;
-      } else {
-        response.json({received: true, error: "Error getting order from DB, please open a support ticket at discord.gg/modern."});
-        break;
-      }
-    } else {
-      response.json({received: true, error: "Error getting order from DB, please open a support ticket at discord.gg/modern."});
-      break;
-    }
-  default:
-    response.status(400).send(`Webhook Error: signatures do not match`);
-    console.log(`Unhandled event type ${newpayload.event}`);
-  }
-});
+// ############################################################################################################ Express Webhook/Discord API ############################################################################################################ 
 
 app.get('/auth/discord/callback', async (req, res) => {
   const {code} = req.query;
@@ -1375,134 +1031,6 @@ app.get('/auth/discord/callback', async (req, res) => {
   }
 });
 
-app.listen(4002, () => {
-  console.log(`Modern Mothership API is UP !`);
-})
-
-// ############################################################################################################ Functions Casino ############################################################################################################ 
-
-function face(cardValue) {
-  if (cardValue === 'Jack' || cardValue === 'Queen' || cardValue === 'King') {
-    cardValue = '10';
-  } else if (cardValue === 'Ace') {
-    cardValue = '11';
-  }
-  return parseInt(cardValue);
-}
-
-function get_emoji(cardNum) {
-  switch (cardNum) {
-    case 'Ace':
-      return '🅰️';
-    case '2':
-      return '2️⃣';
-    case '3':
-      return '3️⃣';
-    case '4':
-      return '4️⃣';
-    case '5':
-      return '5️⃣';
-    case '6':
-      return '6️⃣';
-    case '7':
-      return '7️⃣';
-    case '8':
-      return '8️⃣';
-    case '9':
-      return '9️⃣';
-    case '10':
-      return '🔟';
-    case 'Jack':
-      return '🇯';
-    case 'Queen':
-      return '🇶';
-    case 'King':
-      return '🇰';
-    default:
-      return '';
-  }
-}
-
-async function dealerDraw(dealerTotal, userData) {
-  if (dealerTotal > 16) {
-    return userData;
-  } else if (dealerTotal < 17) {
-    const vals = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace'];
-    const suits = ['spades', 'clubs', 'hearts', 'diamonds'];
-    const deck = vals.flatMap(val => suits.map(suit => [val, suit]));
-    deck.sort(() => Math.random() - 0.5);
-    const dealerCards = userData['dealer_cards'];
-    dealerCards.push(deck[0][0]);
-    userData['dealer_cards'] = dealerCards;
-    dealerTotal += face(deck[0][0]);
-    return await dealerDraw(dealerTotal, userData); // added 'return' here
-  }
-}
-
-async function playerDraw(userData) {
-  const vals = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace'];
-  const suits = ['spades', 'clubs', 'hearts', 'diamonds'];
-  const deck = vals.flatMap(val => suits.map(suit => [val, suit]));
-  deck.sort(() => Math.random() - 0.5);
-  const playerCards = userData['player_cards'];
-  playerCards.push(deck[0][0]);
-  userData['player_cards'] = playerCards;
-  return userData
-}
-
-function roulette_blackorred(bet_color) {
-  const random_num = Math.floor(Math.random() * 3);
-  if (bet_color === 'red' && random_num === 0) {
-    return true;
-  } else if (bet_color === 'black' && random_num === 1) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-function find_dice(number) {
-  if (number === "E") {
-    number = 11
-  } else if (number === "T") {
-    number = 10
-  } else if (number === "W") {
-    number = 12
-  } else {
-    number = parseInt(number)
-  }
-  return number
-}
-
-function dice_game(chance_to_land) {
-    // Roll two dice
-    let dice1 = Math.floor(Math.random() * 6) + 1;
-    let dice2 = Math.floor(Math.random() * 6) + 1;
-    let total = dice1 + dice2;
-
-    // Add a 30% edge to be false
-    const edge = Math.random() < 0.3;
-
-    // If the edge is triggered, re-roll the dice until the total is different from the chance to land
-    while (edge && total === chance_to_land) {
-        dice1 = Math.floor(Math.random() * 6) + 1;
-        dice2 = Math.floor(Math.random() * 6) + 1;
-        total = dice1 + dice2;
-    }
-
-    // Check if user guess is correct
-    if (total === chance_to_land && !edge) {
-        return [true, total];
-    } else {
-        return [false, total];
-    }
-}
-
-function shuffle(array) {
-  for (var i = array.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
-      var temp = array[i];
-      array[i] = array[j];
-      array[j] = temp;
-  }
-}
+app.listen(process.env.APP_PORT, () => {
+  console.log(''+process.env.SERV_NAME+' Mothership API is UP !');
+});

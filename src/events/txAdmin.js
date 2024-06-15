@@ -4,9 +4,9 @@ let cookie, csrfToken;
 
 async function init() {
     try {
-        const response = await axios.post('http://127.0.0.1:40120/auth/password?uiVersion=7.1.0', {
-            username: 'admin',
-            password: 'w9gXq9e43StM4PRbMe64'
+        const response = await axios.post('http://'+process.env.TX_ENDPOINT+'/auth/password?uiVersion='+process.env.TX_VERSION+'', {
+            username: process.env.TX_USERNAME,
+            password: process.env.TX_PASSWORD
         }, {
             headers: {
                 'Content-Type': 'application/json',

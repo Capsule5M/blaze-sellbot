@@ -8,7 +8,7 @@ module.exports = {
     async execute(client) {
         console.log('Ready!');
 
-        client.user.setPresence({activities: [{ name: "la commande /help", type: ActivityType.Watching }]});
+        client.user.setPresence({activities: [{ name: process.env.PRESENCE_TEXT, type: ActivityType.Watching }]});
         client.user.setStatus('dnd');
 
         if (!mongodbURL) return;

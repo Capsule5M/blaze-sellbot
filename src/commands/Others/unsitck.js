@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField } = require('discord.js');
 const stickySchema = require("../../Schemas.js/sticky");
+require('dotenv').config();
 
 module.exports = {
     data: new SlashCommandBuilder()

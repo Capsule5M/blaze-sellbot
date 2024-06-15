@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const QueryDb = require("../../events/QueryDb");
 const { json } = require('express');
+require('dotenv').config();
 
 String.prototype.format = function() {
     var args = Array.from(arguments);

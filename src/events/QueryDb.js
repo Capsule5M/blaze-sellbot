@@ -1,10 +1,10 @@
 const mysql = require('mysql');
 
 var con = mysql.createPool({
-    host: "127.0.0.1",
-    user: "admin",
-    password: "t3SqfX41FzpihSwETUZQ32qZAPO9djEw",
-    database: "modern"
+    host: process.env.PROD_HOST,
+    user: process.env.PROD_USER,
+    password: process.env.PROD_PASS,
+    database: process.env.PROD_DB_NAME
 });
 
 function QueryDb(sql, cb) {

@@ -5,7 +5,7 @@ require('dotenv').config();
 module.exports = {
     data: new SlashCommandBuilder()
     .setName("admin")
-    .setDescription("Admin tool !")
+    .setDescription("Gerer les comptes donateur (Admins uniquement).")
     .addUserOption(option => option.setName('user').setDescription('Le nom d\'utilisateur du compte donateur.').setRequired(false))
     .addStringOption(option => option.setName('email').setDescription('L\'email du compte donateur.').setRequired(false))
     .setDMPermission(false),
@@ -33,7 +33,7 @@ module.exports = {
         const embed = new EmbedBuilder()
         .setColor(0x8200e9)
         .setTitle(`Compte de donation **[${user ? user.username : userData.discordID}]**`)
-        .setDescription('**Numero de compte :** <@'+userData.discordID+'>\n**Email :** `'+emailStatus+'`\n**VIP :** '+vipStatus+'\n**Createur : **`'+creatorStatus+'`\n**Vos Diamands <a:diamondmodern:1209541241524584528> :** `'+userData.coins+'`')
+        .setDescription('**Numero de compte :** <@'+userData.discordID+'>\n**Email :** `'+emailStatus+'`\n**VIP :** '+vipStatus+'\n**Vos '+process.env.COIN_NAME+' :** `'+userData.coins+'`')
         .setFooter({ text: process.env.FOOTER_TEXT, iconURL: process.env.FOOTER_URL})
         .setTimestamp();
         const row1 = new ActionRowBuilder()
@@ -46,12 +46,12 @@ module.exports = {
             .setEmoji('1210216662322909214'),
             new ButtonBuilder()
             .setCustomId('addcoins'+userData.discordID)
-            .setLabel('Add Diamands')
+            .setLabel('Add Coins')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('1209541241524584528'),
             new ButtonBuilder()
             .setCustomId('removeco'+userData.discordID)
-            .setLabel('Remove Diamands')
+            .setLabel('Remove Coins')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('1209541241524584528'),
           );
@@ -64,12 +64,12 @@ module.exports = {
             .setEmoji('1210216662322909214'),
             new ButtonBuilder()
             .setCustomId('addcoins'+userData.discordID)
-            .setLabel('Add Diamands')
+            .setLabel('Add Coins')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('1209541241524584528'),
             new ButtonBuilder()
             .setCustomId('removeco'+userData.discordID)
-            .setLabel('Remove Diamands')
+            .setLabel('Remove Coins')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('1209541241524584528'),
           );
@@ -81,11 +81,6 @@ module.exports = {
             .setLabel('Changer VIP')
             .setStyle(ButtonStyle.Secondary)
             .setEmoji('1083824500535214101'),
-            new ButtonBuilder()
-            .setCustomId('cgcreator'+userData.discordID)
-            .setLabel('Changer createur')
-            .setStyle(ButtonStyle.Secondary)
-            .setEmoji('1005550287764856922'),
             new ButtonBuilder()
             .setCustomId('cgmail'+userData.discordID)
             .setLabel('Changer mail')

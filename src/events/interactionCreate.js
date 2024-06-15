@@ -25,7 +25,7 @@ module.exports = {
             var channel = interaction.channel;
             var errorTime = `<t:${Math.floor(Date.now() / 1000)}:R>`;
 
-            const sendChannel = await client.channels.fetch(process.env.LOGSID);
+            const sendChannel = await client.channels.fetch(process.env.LOGS_CHANNEL);
 
             const embed = new EmbedBuilder()
             .setColor(0x8200e9)

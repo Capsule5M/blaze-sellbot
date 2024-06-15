@@ -60,7 +60,7 @@ const storeItems = new Map([
 ])
 
 async function logAction(description) {
-  const channel = client.channels.cache.get(process.env.LOGSID);
+  const channel = client.channels.cache.get(process.env.LOGS_CHANNEL);
   const embed = new EmbedBuilder()
     .setTitle("ShopBot - Log d'actions")
     .setDescription(description)
